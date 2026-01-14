@@ -1,0 +1,4 @@
+quixstreams>=2.4.0
+kafka-python
+pandas
+matplotlib
