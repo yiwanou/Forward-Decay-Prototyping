@@ -1,77 +1,63 @@
-import matplotlib
-# FORCE HEADLESS BACKEND (Crucial for Docker)
-matplotlib.use('Agg') 
-
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
-import sys
 
-def plot_comparison():
-    input_file = "data/comparison_results.csv"
-    output_dir = "evaluation/plots_comparison"
-    os.makedirs(output_dir, exist_ok=True)
-    
-    # 1. Debug: Check File Existence
-    if not os.path.exists(input_file):
-        print(f"[Error] {input_file} not found. The collector has not saved any data yet.")
+def plot():
+    file_path = "data/comparison_results.csv"
+    if not os.path.exists(file_path):
+        print("No data file found.")
         return
 
-    # 2. Debug: Read and Print Raw Data
     try:
-        # Read without assuming types first to see what's in there
-        df = pd.read_csv(input_file)
-        print(f"[Debug] Raw CSV has {len(df)} rows.")
-        if not df.empty:
-            print("[Debug] First 5 rows:")
-            print(df.head())
-        else:
-            print("[Error] CSV file is empty! Waiting for data...")
-            return
-    except Exception as e:
-        print(f"[Error] Could not read CSV: {e}")
+        df = pd.read_csv(file_path)
+    except Exception:
+        print("CSV is empty or invalid.")
         return
-
-    # 3. Clean Data
-    # Force types and drop bad rows
-    df['timestamp'] = pd.to_numeric(df['timestamp'], errors='coerce')
-    df['keys_in_memory'] = pd.to_numeric(df['keys_in_memory'], errors='coerce')
-    df = df.dropna(subset=['timestamp', 'keys_in_memory'])
-    df = df.sort_values(by="timestamp")
 
     if df.empty:
-        print("[Error] No valid numeric data found after cleaning. Check CSV format.")
+        print("Dataframe is empty.")
         return
 
-    # Normalize time
-    start_time = df['timestamp'].min()
-    df['relative_time'] = df['timestamp'] - start_time
-
-    # Split Data
-    tumbling = df[df["algorithm"] == "TUMBLING"]
-    sliding = df[df["algorithm"] == "SLIDING"]
-
-    print(f"[Debug] Plotting {len(tumbling)} Tumbling points and {len(sliding)} Sliding points.")
-
-    # 4. Plot
+    # Clean and Sort
+    df['timestamp'] = pd.to_numeric(df['timestamp'], errors='coerce')
+    df = df.dropna().sort_values("timestamp")
+    
+    # Normalize time (Relative start from 0)
+    df['rel_time'] = df['timestamp'] - df['timestamp'].min()
+    
     plt.figure(figsize=(12, 6))
-    plt.grid(True, which='both', linestyle='--', alpha=0.5)
     
-    # Plot Sliding (Blue)
-    if not sliding.empty:
-        plt.plot(sliding["relative_time"], sliding["keys_in_memory"], 
-                 label="Sliding Window", color="#1f77b4", linewidth=2)
-    
-    # Plot Tumbling (Red)
-    if not tumbling.empty:
-        plt.plot(tumbling["relative_time"], tumbling["keys_in_memory"], 
-                 label="Tumbling Window", color="#d62728", linestyle="--", marker="o", markersize=4)
+    # Styles for each algo
+    styles = {
+        "TUMBLING": {"color": "#d62728", "style": "--", "label": "Tumbling (Time)"},
+        "SLIDING":  {"color": "#1f77b4", "style": "-",  "label": "Sliding (Lazy)"},
+        "THRESHOLD":{"color": "#2ca02c", "style": ":",  "label": "Threshold (Count)"},
+        "SESSION":  {"color": "#9467bd", "style": "-.", "label": "Session (Gap)"}
+    }
 
-    plt.xlabel("Simulation Time (seconds)")
+    # Plot each algorithm found in the CSV
+    for algo in df['algorithm'].unique():
+        subset = df[df['algorithm'] == algo]
+        style = styles.get(algo, {"color": "black", "style": "-", "label": algo})
+        
+        plt.plot(subset['rel_time'], subset['keys_in_memory'], 
+                 label=style["label"], 
+                 color=style["color"], 
+                 linestyle=style["style"], 
+                 linewidth=2,
+                 alpha=0.8)
+
+    plt.xlabel("Simulation Time (s)")
     plt.ylabel("Keys in Memory")
-    plt.title("Comparison: Tumbling vs Sliding Window Memory Usage")
+    plt.title("Memory Efficiency: Windowed Forward Decay Comparison")
+    plt.grid(True, which="both", linestyle='--', alpha=0.3)
     plt.legend()
     plt.tight_layout()
     
-    # Save
-    output_path = os.path.join
+    output_path = "data/final_comparison.png"
+    plt.savefig(output_path)
+    print(f"Plot saved to {output_path}")
+    plt.show()
+
+if __name__ == "__main__":
+    plot()

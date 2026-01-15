@@ -1,3 +1,4 @@
+version: "3.8"
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.4.0
@@ -18,52 +19,3 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-
-  tumbling-processor:
-    build: .
-    depends_on: [kafka]
-    environment:
-      - WINDOW_ALGO=TUMBLING
-    volumes:
-      - ./src:/app/src
-    command: python -u src/app.py
-
-  sliding-processor:
-    build: .
-    depends_on: [kafka]
-    environment:
-      - WINDOW_ALGO=SLIDING
-    volumes:
-      - ./src:/app/src
-    command: python -u src/app.py
-
-  collector:
-    build: .
-    depends_on: [kafka]
-    volumes:
-      - ./src:/app/src
-      - ./data:/app/data
-    command: python -u src/collector.py
-
-  generator:
-    build: .
-    depends_on: [kafka]
-    environment:
-      - KAFKA_BROKER=kafka:29092
-    volumes:
-      - ./generator:/app/generator
-    command: python -u generator/traffic_generator.py
-
-  # AUTOMATED PLOTTER
-  plotter:
-    build: .
-    depends_on: [collector]
-    volumes:
-      - ./data:/app/data                                             # Input Data
-      - ./evaluation/plots_comparison:/app/evaluation/plots_comparison # Output Folder
-    # Wait 60s, then plot, then exit.
-    command: >
-      sh -c "echo 'Plotter started. Waiting 60s for data generation...' 
-      && sleep 60 
-      && python -u evaluation/plot_comparison.py
-      && echo 'Plotting finished. Exiting container.'"
