@@ -1,32 +1,41 @@
-# Forward Decay Prototyping: Windowed Extensions
+# Forward Decay Prototyping
 
-This repository contains a reproducible implementation of the **Forward Decay** algorithm (Cormode et al., 2009) and a prototype of **Windowed Forward Decay** strategies to address the infinite memory problem in streaming systems.
+## Project Description
 
-## 🎯 Purpose
-The original Forward Decay algorithm is computationally efficient ($O(1)$ updates) but suffers from unbounded memory growth in infinite streams because it never physically deletes keys (it only decays their weight). 
+This project addresses the "Infinite Memory" problem found in the original **Forward Decay** algorithm (Cormode et al., 2009).
 
-**This prototype implements and compares four "Garbage Collection" strategies** (Windows) on top of the Forward Decay core:
-1.  **Tumbling Window (Time-Based)**: Eagerly resets memory every $T$ seconds.
-2.  **Sliding Window (Time-Based)**: Lazily prunes keys older than $T$ seconds.
-3.  **Threshold Window (Count-Based)**: Resets memory after $N$ updates.
-4.  **Session Window (Gap-Based)**: Prunes keys inactive for $G$ seconds.
+While Forward Decay is computationally efficient ($O(1)$ updates) for time-decaying data, it mathematically "forgets" old data without physically deleting it. In infinite streams, this leads to **memory bloat**, where millions of near-zero weight items eventually crash the system.
 
-## 📂 Project Structure
-```text
-├── docker-compose.yml       # Infrastructure (Kafka + Zookeeper)
-├── run_experiment.py        # Orchestrator script (Runs Python logic)
-├── src/
-│   ├── app.py               # Stream Processor (Quix Streams)
-│   ├── collector.py         # Data Collector (Saves to CSV)
-│   ├── utils/
-│   │   └── ForwardDecay.py  # Core Mathematical Implementation
-│   └── windows/             # Window Strategy Implementations
-│       ├── tumbling_window.py
-│       ├── sliding_window.py
-│       ├── threshold_window.py
-│       └── session_window.py
-├── generator/
-│   └── traffic_generator.py # Synthetic Traffic (Phased Concept Drift)
-├── evaluation/
-│   └── plot_comparison.py   # Visualization Script
-└── data/                    # Output folder (CSV results + PNG graphs)
+**Our Solution:**
+We implemented a **Windowed Forward Decay** prototype that wraps the core algorithm with four distinct "Garbage Collection" strategies (based on *Verwiebe et al., 2023*) to reclaim memory while preserving speed:
+1.  **Tumbling Window:** Hard resets every $T$ seconds (Low CPU, "Sawtooth" memory).
+2.  **Sliding Window:** Lazily prunes keys inactive for $T$ seconds (Stable memory).
+3.  **Threshold Window:** Resets after $N$ items (Volume-based).
+4.  **Session Window:** Prunes keys after an inactivity gap (User-behavior based).
+
+## Project Structure
+
+* **`docker-compose.yml`**: Runs the infrastructure (Kafka & Zookeeper).
+* **`run_experiment.py`**: The orchestrator script that runs the entire simulation.
+* **`src/`**: Contains the Stream Processors and Window implementations.
+* **`generator/`**: Generates synthetic "phased" traffic to test memory reclamation.
+* **`evaluation/`**: Scripts to generate research-grade plots (Memory vs. Time).
+
+---
+
+## How to Run
+
+This project uses a **Hybrid Architecture**: Kafka runs in Docker, while the Python logic runs locally for real-time control.
+
+### 1. Prerequisites
+* **Docker Desktop** (running).
+* **Python 3.9+**.
+* Install dependencies:
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+### 2. Start Infrastructure
+Open a terminal in the project root and start the message broker:
+```bash
+docker-compose up -d
