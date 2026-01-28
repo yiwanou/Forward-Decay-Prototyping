@@ -9,7 +9,6 @@ from windows.threshold_window import ThresholdWindow
 from windows.session_window import SessionWindow
 
 def main():
-    # Parse CLI Args
     parser = argparse.ArgumentParser()
     parser.add_argument("--algo", type=str, required=True, help="TUMBLING, SLIDING, THRESHOLD, SESSION")
     args = parser.parse_args()
@@ -17,10 +16,9 @@ def main():
     algo_type = args.algo.upper()
     print(f"[Processor] Starting {algo_type} Strategy...")
 
-    # CONFIG
     DECAY_LAMBDA = 0.1
     
-    # Initialize Strategy based on Argument
+    # initialize strategy
     if algo_type == "TUMBLING":
         strategy = TumblingWindow(window_size_sec=5, lambda_=DECAY_LAMBDA)
     elif algo_type == "SLIDING":
@@ -33,7 +31,7 @@ def main():
         print(f"Unknown algorithm: {algo_type}")
         return
 
-    # Connect to Localhost Kafka
+    # connect to kafka
     app = Application(
         broker_address="localhost:9092",
         consumer_group=f"fwd-{algo_type.lower()}-group",
@@ -46,21 +44,17 @@ def main():
     sdf = app.dataframe(input_topic)
 
     def process(row):
-        # Process event
+        # pSrocess event
         res = strategy.process(row["item_id"], row["timestamp"])
         
         if res:
-            # --- FIX: ROBUST KEY RETRIEVAL ---
-            # Different windows return different keys for time. We check all of them.
             ts = res.get("current_time")
             if ts is None:
                 ts = res.get("window_end")
             if ts is None:
                 ts = res.get("timestamp")
             if ts is None:
-                ts = row["timestamp"] # Fallback to input time
-                
-            # Robustly get keys count
+                ts = row["timestamp"] 
             keys = res.get("keys_stored")
             if keys is None:
                 keys = res.get("keys_in_memory", 0)

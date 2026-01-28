@@ -15,9 +15,9 @@ class SlidingWindow(WindowStrategy):
         self.cleanup_interval = cleanup_interval
         self.lambda_ = lambda_
         
-        # State
+        # state
         self.fd = ForwardDecay(lambda_=self.lambda_)
-        self.last_seen = {}  # Map[item_id] -> timestamp
+        self.last_seen = {}  
         
         self.next_cleanup_time = None
 
@@ -28,12 +28,12 @@ class SlidingWindow(WindowStrategy):
         """
         expired_keys = []
         
-        # Identify expired keys
+        # identify expired keys
         for item_id, last_ts in self.last_seen.items():
             if current_time - last_ts > self.window_size:
                 expired_keys.append(item_id)
         
-        # Delete them from State
+        # delete them
         for item_id in expired_keys:
             del self.last_seen[item_id]
             if item_id in self.fd.decayed_counts:
@@ -42,35 +42,34 @@ class SlidingWindow(WindowStrategy):
         return len(expired_keys)
 
     def process(self, item_id, timestamp):
-        # 1. Initialization
+        #  initialization
         if self.next_cleanup_time is None:
             self.fd._ensure_t0(timestamp)
             self.next_cleanup_time = timestamp + self.cleanup_interval
 
         result = None
 
-        # 2. Update State
+        #  update State
         self.fd.update(item_id, timestamp)
         self.last_seen[item_id] = timestamp
 
-        # 3. Periodic Cleanup (The "Sliding" Mechanism)
+        #  cleanup
         if timestamp >= self.next_cleanup_time:
-            # A. Prune
+            #  prune
             deleted_count = self._prune_expired_keys(timestamp)
             
-            # B. Report Stats
             keys_in_memory = self.fd.get_memory_usage()
             top_k = self.fd.top_k(5, timestamp)
             
             result = {
                 "window_type": "Sliding",
                 "current_time": timestamp,
-                "keys_stored": keys_in_memory,     # COMPARISON METRIC
+                "keys_stored": keys_in_memory,    
                 "keys_pruned": deleted_count,
                 "top_heavy_hitters": top_k
             }
             
-            # C. Schedule next cleanup
+            # schedule next cleanup
             while timestamp >= self.next_cleanup_time:
                 self.next_cleanup_time += self.cleanup_interval
         

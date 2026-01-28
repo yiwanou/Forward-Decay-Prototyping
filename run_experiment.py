@@ -11,21 +11,21 @@ def run():
     
     processes = []
     
-    # 1. Start Data Collector
+    # start data collector
     print("[1/3] Starting Collector...")
     p_col = subprocess.Popen([sys.executable, "src/collector.py"])
     processes.append(p_col)
     
-    # 2. Start Processors (All 4 types in parallel)
+    #  start processors
     algos = ["TUMBLING", "SLIDING", "THRESHOLD", "SESSION"]
     for algo in algos:
         print(f"[2/3] Launching {algo} Processor...")
         p = subprocess.Popen([sys.executable, "src/app.py", "--algo", algo])
         processes.append(p)
 
-    # 3. Start Traffic Generator
+    #  start traffic generator
     print("[3/3] Launching Traffic Generator (Phased Traffic)...")
-    time.sleep(2) # Give processors time to connect
+    time.sleep(2) 
     p_gen = subprocess.Popen([sys.executable, "generator/traffic_generator.py"])
     processes.append(p_gen)
 
@@ -38,7 +38,6 @@ def run():
             time.sleep(1)
     except KeyboardInterrupt:
         print("\n\nStopping all processes...")
-        # Kill all subprocesses
         for p in processes:
             p.terminate()
         

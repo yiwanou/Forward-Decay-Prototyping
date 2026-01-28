@@ -12,7 +12,7 @@ class TumblingWindow(WindowStrategy):
     def _reset_window(self, start_time):
         self.window_start = start_time
         self.window_end = start_time + self.window_size
-        # RESET: New instance, clearing old keys
+        # reset to a newinsatnce
         self.fd = ForwardDecay(lambda_=self.lambda_, t0=self.window_start)
 
     def process(self, item_id, timestamp):
@@ -21,28 +21,27 @@ class TumblingWindow(WindowStrategy):
 
         result = None
 
-        # Check for Tumble
         if timestamp >= self.window_end:
-            # 1. Measure the system right before reset
+            #  measure the system before reset
             keys_in_memory = self.fd.get_memory_usage()
             top_k = self.fd.top_k(5, self.window_end)
             
             result = {
                 "window_start": self.window_start,
                 "window_end": self.window_end,
-                "keys_stored": keys_in_memory,  # COMPARISON METRIC
+                "keys_stored": keys_in_memory,  
                 "top_heavy_hitters": top_k
             }
             
-            # 2. Advance Window
+            #  advance window
             while timestamp >= self.window_end:
                 self.window_start += self.window_size
                 self.window_end += self.window_size
             
-            # 3. Hard Reset (Garbage Collection)
+            #  hard reset
             self.fd = ForwardDecay(lambda_=self.lambda_, t0=self.window_start)
 
-        # Update
+
         if timestamp >= self.window_start:
             self.fd.update(item_id, timestamp)
             

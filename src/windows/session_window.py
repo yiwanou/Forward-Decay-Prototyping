@@ -11,7 +11,7 @@ class SessionWindow(WindowStrategy):
         self.cleanup_interval = cleanup_interval
         
         self.fd = ForwardDecay(lambda_=self.lambda_)
-        self.last_active = {} # Map[item_id] -> last_timestamp
+        self.last_active = {} 
         self.next_cleanup = None
 
     def process(self, item_id, timestamp):
@@ -19,27 +19,27 @@ class SessionWindow(WindowStrategy):
             self.fd._ensure_t0(timestamp)
             self.next_cleanup = timestamp + self.cleanup_interval
 
-        # Update Session Activity
+        # update Session Activity
         self.fd.update(item_id, timestamp)
         self.last_active[item_id] = timestamp
         
         result = None
 
-        # Periodic Cleanup (Check for Session Timeouts)
+        # cleanup 
         if timestamp >= self.next_cleanup:
-            # Identify keys active longer than the gap
+            # identify longer keys 
             expired_keys = [
                 k for k, last_ts in self.last_active.items() 
                 if (timestamp - last_ts) > self.gap_size
             ]
             
-            # Prune
+            # prune
             for k in expired_keys:
                 del self.last_active[k]
                 if k in self.fd.decayed_counts:
                     del self.fd.decayed_counts[k]
             
-            # Report
+            # report
             result = {
                 "window_type": "Session",
                 "current_time": timestamp,

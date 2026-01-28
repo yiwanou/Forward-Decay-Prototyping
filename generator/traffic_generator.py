@@ -18,17 +18,15 @@ def generate():
         while True:
             phase_index = int(sim_time / phase_duration)
             
-            # Distinct user sets per phase
             start_id = phase_index * 1000
             end_id = start_id + 1000
             
-            # Burst of traffic
             for _ in range(50):
                 user_id = f"user_{random.randint(start_id, end_id)}"
                 producer.send("traffic_stream", {"timestamp": sim_time, "item_id": user_id})
 
             sim_time += 0.2
-            time.sleep(0.05) # Speed of simulation
+            time.sleep(0.05) 
             
             if int(sim_time) % 5 == 0:
                 print(f"Sim Time: {sim_time:.1f}")

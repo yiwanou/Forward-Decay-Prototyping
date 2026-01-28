@@ -12,18 +12,17 @@ class ThresholdWindow(WindowStrategy):
         self.fd = ForwardDecay(lambda_=self.lambda_)
 
     def process(self, item_id, timestamp):
-        # Initialize
+        # initialize
         self.fd._ensure_t0(timestamp)
 
-        # Update
+        # update
         self.fd.update(item_id, timestamp)
         self.count += 1
         
         result = None
 
-        # Check Threshold
+        # checkt threshold
         if self.count >= self.threshold:
-            # Report before reset
             keys_in_memory = self.fd.get_memory_usage()
             
             result = {
@@ -33,7 +32,7 @@ class ThresholdWindow(WindowStrategy):
                 "meta": f"Reset at {self.count} items"
             }
             
-            # HARD RESET
+            #  reset
             self.fd = ForwardDecay(lambda_=self.lambda_)
             self.fd._ensure_t0(timestamp)
             self.count = 0

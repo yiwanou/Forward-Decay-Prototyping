@@ -18,16 +18,15 @@ def plot():
         print("Dataframe is empty.")
         return
 
-    # Clean and Sort
+    # clean and sort
     df['timestamp'] = pd.to_numeric(df['timestamp'], errors='coerce')
     df = df.dropna().sort_values("timestamp")
     
-    # Normalize time (Relative start from 0)
+    # set time from t=0
     df['rel_time'] = df['timestamp'] - df['timestamp'].min()
     
     plt.figure(figsize=(12, 6))
     
-    # Styles for each algo
     styles = {
         "TUMBLING": {"color": "#d62728", "style": "--", "label": "Tumbling (Time)"},
         "SLIDING":  {"color": "#1f77b4", "style": "-",  "label": "Sliding (Lazy)"},
@@ -35,7 +34,7 @@ def plot():
         "SESSION":  {"color": "#9467bd", "style": "-.", "label": "Session (Gap)"}
     }
 
-    # Plot each algorithm found in the CSV
+    # plotting the alg
     for algo in df['algorithm'].unique():
         subset = df[df['algorithm'] == algo]
         style = styles.get(algo, {"color": "black", "style": "-", "label": algo})

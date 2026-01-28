@@ -13,7 +13,6 @@ def plot():
     df = df.sort_values("timestamp")
     df['rel_time'] = df['timestamp'] - df['timestamp'].min()
     
-    # Filter only Behavior-Based Windows
     target_algos = ["THRESHOLD", "SESSION"]
     df = df[df['algorithm'].isin(target_algos)]
     

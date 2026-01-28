@@ -7,7 +7,7 @@ def main():
     csv_file = "data/comparison_results.csv"
     os.makedirs("data", exist_ok=True)
     
-    # Reset file
+
     with open(csv_file, 'w', newline='') as f:
         writer = csv.writer(f)
         writer.writerow(["algorithm", "timestamp", "keys_in_memory"])

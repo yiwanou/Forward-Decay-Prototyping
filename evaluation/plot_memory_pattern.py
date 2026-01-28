@@ -13,7 +13,7 @@ def plot():
     df = df.sort_values("timestamp")
     df['rel_time'] = df['timestamp'] - df['timestamp'].min()
     
-    # Filter only Time-Based Windows
+    # filtering the windows
     target_algos = ["TUMBLING", "SLIDING"]
     df = df[df['algorithm'].isin(target_algos)]
     
